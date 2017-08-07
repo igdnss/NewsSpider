@@ -13,18 +13,18 @@ import os
 
 class TencentSpider(scrapy.Spider):
 
+	start_urls = ['http://news.qq.com']
 	name='tencent'
-	start_urls = ['http://sports.qq.com/']
-	allowed_domains=['sports.qq.com']
+	allowed_domains=['news.qq.com']
 
-	base_url = 'http://sports.qq.com'
+	base_url = 'http://news.qq.com'
 	tp = ['am','pm']
 
 	day = ['02']
 	year = ['2017']
 	month = ['08']
 	
-	fileTitle = ''
+	fileName = ''
 	path_prefix = '../../../testdata/data/'
 
 	def generateSubPath(self):
@@ -59,14 +59,34 @@ class TencentSpider(scrapy.Spider):
 		temp = self.generateSubPath()
 		print("===================================")
 		for url in urls:
+			if(url.find('sports.qq.com')>=0 and len(url)==21):
+				print("--------------sports--------------"+url)
+				yield scrapy.Request(url,self.parseType,dont_filter=True)
+# 			elif(url.find('http://finance.qq.com/')>=0 and len(url)==22):
+# 				print("--------------finance--------------"+url)
+# 				yield scrapy.Request(url,self.parseType,dont_filter=True)
+			elif(url.find('http://ent.qq.com/')>=0 and len(url)==18):
+				print("--------------ent--------------"+url)
+				yield scrapy.Request(url,self.parseType,dont_filter=True)
+			elif(url.find('http://tech.qq.com/')>=0 and len(url)==19):
+				print("--------------tech--------------"+url)
+				yield scrapy.Request(url,self.parseType,dont_filter=True)
+	# parse kinds of type of news
+	def parseType(self,response):
+		print("--------------parsing type--------------")
+		urls = response.xpath("//a/@href").extract()
+		temp = self.generateSubPath()
+		for url in urls:
 			if 'http' in url or temp in url:
 				url = url 
 				if 'http' in url and temp in url:
-					yield scrapy.Request(url,self.parseNews)
+					print("--------------with http url--------------"+url)
+					yield scrapy.Request(url,self.parseNews,dont_filter=True)
 				elif temp in url:
-					url = self.base_url+url
-					yield scrapy.Request(url,self.parseNews)
-		
+					url = response.url+url
+					print("--------------with temp url--------------"+url)
+					yield scrapy.Request(url,self.parseNews,dont_filter=True)
+			
 	def parseNews(self,response):
 		print("--------------parsing news--------------")
 		data = response.xpath("//div[@id='Cnt-Main-Article-QQ']")
@@ -75,7 +95,7 @@ class TencentSpider(scrapy.Spider):
 		content = response.xpath("//div[@id='Cnt-Main-Article-QQ']/p[@style='TEXT-INDENT: 2em']/text()").extract()
 		cc=''
 		if len(content)>0:
-			self.fileTitle = response.url[-10:-4]+".txt" 
+			self.fileName = response.url[-10:-4]+".txt" 
 			scriptCnt = response.xpath("//script[1]/text()").extract()
 			url = response.url
 			title = response.xpath("//title/text()").extract()
@@ -83,16 +103,23 @@ class TencentSpider(scrapy.Spider):
 				cc = cc+c+'\n'
 			content = cc.strip()
 			time = self.getTimeStr(scriptCnt[0])
-			
-			if(url.find("sports.qq.com")>=0):
-				title = u''.join(title[0]).encode('utf-8')
-				content = u''.join(content).encode('utf-8')
-				self.save("tencent/sports/", url, time, title, content)
+			print("--------------questions urls--------------"+response.url)
+			title = u''.join(title[0]).encode('utf-8')
+			content = u''.join(content).encode('utf-8')
+			if(len(content) > 0):
+				if(url.find("sports.qq.com") >= 0):
+					self.save("tencent/sports/", url, time, title, content)
+# 				elif(url.find("finance.qq.com") >= 0):
+# 					self.save("tencent/finance/", url, time, title, content)
+				elif(url.find("ent.qq.com") >= 0): 
+					self.save("tencent/ent/", url, time, title, content)
+				elif(url.find("tech.qq.com") >= 0):
+					self.save("tencent/tech/", url, time, title, content)
 				 
 	def save(self,newsType,newsUrl,newsTime,newsTitle,newsContent):
 		print("--------------saving file--------------")
 		current_dir = os.path.dirname(__file__)
-		rel_path = self.path_prefix+newsType+self.fileTitle
+		rel_path = self.path_prefix+newsType+self.fileName
 		abs_file_path = os.path.join(current_dir, rel_path)
 		print("--------------******************abs_file_path--------------"+abs_file_path)
 		file = open(abs_file_path,"w") 
