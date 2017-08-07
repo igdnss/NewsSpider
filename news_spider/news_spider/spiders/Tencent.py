@@ -13,8 +13,8 @@ import os
 
 class TencentSpider(scrapy.Spider):
 
-	start_urls = ['http://sports.qq.com/']
 	name='tencent'
+	start_urls = ['http://sports.qq.com/']
 	allowed_domains=['sports.qq.com']
 
 	base_url = 'http://sports.qq.com'
@@ -23,6 +23,9 @@ class TencentSpider(scrapy.Spider):
 	day = ['02']
 	year = ['2017']
 	month = ['08']
+	
+	fileTitle = ''
+	path_prefix = '../../../testdata/data/'
 
 	def generateSubPath(self):
 		currentTime = datetime.datetime.now()
@@ -34,6 +37,7 @@ class TencentSpider(scrapy.Spider):
 		if len(day) < 2:
 			day = '0'+day
 		return 'a/'+year+month+day
+	
 	#get the time from news page in string
 	def getTimeStr(self,content):
 		bracePos = content.index('{')-1
@@ -44,12 +48,13 @@ class TencentSpider(scrapy.Spider):
 	    
 	def parse(self,response):
 		url = self.base_url
-		print("--------------******************--------------"+url)
+# 		print("--------------******************path_prefix_1--------------"+self.path_prefix)
 		
 		yield scrapy.Request(url,self.parseList)
 
 	
 	def parseList(self,response):
+# 		print("--------------******************path_prefix_2--------------"+self.path_prefix)
 		urls = response.xpath("//a/@href").extract()
 # 		temp="20170806" will be used at middle night
 		temp = self.generateSubPath()
@@ -64,15 +69,16 @@ class TencentSpider(scrapy.Spider):
 					yield scrapy.Request(url,self.parseNews)
 		
 	def parseNews(self,response):
+# 		print("--------------******************path_prefix_3--------------"+self.path_prefix)
 		data = response.xpath("//div[@id='Cnt-Main-Article-QQ']")
 		item = NewsSpiderItem()
 		timee = data.xpath("//span[@class='article-time']/text()").extract()
 		content = response.xpath("//div[@id='Cnt-Main-Article-QQ']/p[@style='TEXT-INDENT: 2em']/text()").extract()
 		cc=''
 		if len(content)>0:
-			current_dir = os.path.dirname(__file__)
-			fileTitle = response.url[-10:-4]+".txt"
-			path_prefix = "../../../testdata/data/"
+# 			current_dir = os.path.dirname(__file__)
+			self.fileTitle = response.url[-10:-4]+".txt" 
+# 			path_prefix = "../../../testdata/data/"
 			scriptCnt = response.xpath("//script[1]/text()").extract()
 			url = response.url
 			title = response.xpath("//title/text()").extract()
@@ -83,14 +89,37 @@ class TencentSpider(scrapy.Spider):
 			
 			if(url.find("sports.qq.com")>=0):
 				#TODO: to abstract the following code to a method
-				rel_path = path_prefix+"tencent/sports/"+fileTitle
-				abs_file_path = os.path.join(current_dir, rel_path)
-				file = open(abs_file_path,"w") 
-				file.write("\""+"url"+"\""+":"+"\""+url+"\""+'\n') 
-				file.write("\""+"time"+"\""+":"+"\""+time+"\""+'\n') 
 				title = u''.join(title[0]).encode('utf-8')
 				content = u''.join(content).encode('utf-8')
-				file.write("\""+"title"+"\""+":"+"\""+title+"\""+'\n') 
-				file.write("\""+"content"+"\""+":"+"\""+content+"\""+'\n') 
-				file.close()
+				self.save("tencent/sports/", url, time, title, content)
+				 #==============================================================
+				 # rel_path = path_prefix+"tencent/sports/"+fileTitle
+				 # abs_file_path = os.path.join(current_dir, rel_path)
+				 # print("--------------******************abs_file_path--------------"+abs_file_path)
+				 # file = open(abs_file_path,"w") 
+				 # file.write("\""+"url"+"\""+":"+"\""+url+"\""+'\n') 
+				 # file.write("\""+"time"+"\""+":"+"\""+time+"\""+'\n') 
+				 # title = u''.join(title[0]).encode('utf-8')
+				 # content = u''.join(content).encode('utf-8')
+				 # file.write("\""+"title"+"\""+":"+"\""+title+"\""+'\n') 
+				 # file.write("\""+"content"+"\""+":"+"\""+content+"\""+'\n') 
+				 # file.close()
+				 #==============================================================
+				 
+	def save(self,newsType,newsUrl,newsTime,newsTitle,newsContent):
+		print("--------------******************path_prefix_4--------------"+self.path_prefix)
+		current_dir = os.path.dirname(__file__)
+		print("--------------******************current_dir--------------"+current_dir)
+		rel_path = self.path_prefix+newsType+self.fileTitle
+		print("--------------******************rel_path--------------"+rel_path)
+		abs_file_path = os.path.join(current_dir, rel_path)
+		print("--------------******************abs_file_path--------------"+abs_file_path)
+		file = open(abs_file_path,"w") 
+		file.write("\""+"url"+"\""+":"+"\""+newsUrl+"\""+'\n') 
+		file.write("\""+"time"+"\""+":"+"\""+newsTime+"\""+'\n') 
+# 		title = u''.join(title[0]).encode('utf-8')
+# 		content = u''.join(content).encode('utf-8')
+		file.write("\""+"title"+"\""+":"+"\""+newsTitle+"\""+'\n') 
+		file.write("\""+"content"+"\""+":"+"\""+newsContent+"\""+'\n') 
+		file.close()
 			
