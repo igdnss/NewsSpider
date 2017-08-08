@@ -62,15 +62,25 @@ class TencentSpider(scrapy.Spider):
 			if(url.find('sports.qq.com')>=0 and len(url)==21):
 				print("--------------sports--------------"+url)
 				yield scrapy.Request(url,self.parseType,dont_filter=True)
-# 			elif(url.find('http://finance.qq.com/')>=0 and len(url)==22):
-# 				print("--------------finance--------------"+url)
-# 				yield scrapy.Request(url,self.parseType,dont_filter=True)
+			elif(url.find('http://finance.qq.com/')>=0 and len(url)==22):
+				print("--------------finance--------------"+url)
+# 				TODO: fix bug: has an error when extract title
+				yield scrapy.Request(url,self.parseType,dont_filter=True)
+			
+			#===================================================================
+			# if(url.find('http://finance.qq.com/')>=0 and len(url)==22):
+			# 	print("--------------finance--------------"+url)
+			# 	yield scrapy.Request(url,self.parseType,dont_filter=True)	
+			#===================================================================
+				
+				
 			elif(url.find('http://ent.qq.com/')>=0 and len(url)==18):
 				print("--------------ent--------------"+url)
 				yield scrapy.Request(url,self.parseType,dont_filter=True)
 			elif(url.find('http://tech.qq.com/')>=0 and len(url)==19):
 				print("--------------tech--------------"+url)
 				yield scrapy.Request(url,self.parseType,dont_filter=True)
+			
 	# parse kinds of type of news
 	def parseType(self,response):
 		print("--------------parsing type--------------")
@@ -105,12 +115,14 @@ class TencentSpider(scrapy.Spider):
 			time = self.getTimeStr(scriptCnt[0])
 			print("--------------questions urls--------------"+response.url)
 			title = u''.join(title[0]).encode('utf-8')
+			print("--------------questions title--------------"+title)
 			content = u''.join(content).encode('utf-8')
+			print("--------------content title--------------"+content)
 			if(len(content) > 0):
 				if(url.find("sports.qq.com") >= 0):
 					self.save("tencent/sports/", url, time, title, content)
-# 				elif(url.find("finance.qq.com") >= 0):
-# 					self.save("tencent/finance/", url, time, title, content)
+				elif(url.find("finance.qq.com") >= 0 or url.find("money.qq.com") >= 0 or url.find("stock.qq.com") >= 0):
+					self.save("tencent/finance/", url, time, title, content)
 				elif(url.find("ent.qq.com") >= 0): 
 					self.save("tencent/ent/", url, time, title, content)
 				elif(url.find("tech.qq.com") >= 0):
