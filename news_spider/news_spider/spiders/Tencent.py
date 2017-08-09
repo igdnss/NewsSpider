@@ -40,9 +40,18 @@ class TencentSpider(scrapy.Spider):
 	
 	#get the time from news page in string
 	def getTimeStr(self,content):
+# 				TODO: fix bug: has an error when extract pubtime
 		bracePos = content.index('{')-1
 		tempData = content[bracePos:]
 		pubTimeTail = tempData.index('pubtime')+len('pubtime')+2
+		#=======================================================================
+		# try:
+		# 	pubTimeTail = tempData.index('pubtime')+len('pubtime')+2
+		# except ValueError,e:
+		# 	print 'pubtime: '+e
+		# finally:
+		# 	quit()
+		#=======================================================================
 		timeStr = tempData[pubTimeTail:pubTimeTail+16]
 		return timeStr
 	    
@@ -55,7 +64,7 @@ class TencentSpider(scrapy.Spider):
 	def parseList(self,response):
 		print("--------------parsing list--------------")
 		urls = response.xpath("//a/@href").extract()
-# 		temp="20170806" will be used at middle night
+# 		temp="20170806" #will be used at middle night
 		temp = self.generateSubPath()
 		print("===================================")
 		for url in urls:
@@ -64,7 +73,6 @@ class TencentSpider(scrapy.Spider):
 				yield scrapy.Request(url,self.parseType,dont_filter=True)
 			elif(url.find('http://finance.qq.com/')>=0 and len(url)==22):
 				print("--------------finance--------------"+url)
-# 				TODO: fix bug: has an error when extract title
 				yield scrapy.Request(url,self.parseType,dont_filter=True)
 			
 			#===================================================================
@@ -79,6 +87,18 @@ class TencentSpider(scrapy.Spider):
 				yield scrapy.Request(url,self.parseType,dont_filter=True)
 			elif(url.find('http://tech.qq.com/')>=0 and len(url)==19):
 				print("--------------tech--------------"+url)
+				yield scrapy.Request(url,self.parseType,dont_filter=True)
+			elif(url.find('http://auto.qq.com/')>=0 and len(url)==19):
+				print("--------------auto--------------"+url)
+				yield scrapy.Request(url,self.parseType,dont_filter=True)
+			elif(url.find('http://house.qq.com/')>=0 and len(url)==20):
+				print("--------------house--------------"+url)
+				yield scrapy.Request(url,self.parseType,dont_filter=True)
+			elif(url.find('http://fashion.qq.com/')>=0 and len(url)==22):
+				print("--------------fashion--------------"+url)
+				yield scrapy.Request(url,self.parseType,dont_filter=True)
+			elif(url.find('http://cul.qq.com/')>=0 and len(url)==18):
+				print("--------------cul--------------"+url)
 				yield scrapy.Request(url,self.parseType,dont_filter=True)
 			
 	# parse kinds of type of news
@@ -127,6 +147,14 @@ class TencentSpider(scrapy.Spider):
 					self.save("tencent/ent/", url, time, title, content)
 				elif(url.find("tech.qq.com") >= 0):
 					self.save("tencent/tech/", url, time, title, content)
+				elif(url.find("auto.qq.com") >= 0): 
+					self.save("tencent/auto/", url, time, title, content)
+				elif(url.find("house.qq.com") >= 0):
+					self.save("tencent/house/", url, time, title, content)
+				elif(url.find("fashion.qq.com") >= 0): 
+					self.save("tencent/fashion/", url, time, title, content)
+				elif(url.find("cul.qq.com") >= 0):
+					self.save("tencent/cul/", url, time, title, content)
 				 
 	def save(self,newsType,newsUrl,newsTime,newsTitle,newsContent):
 		print("--------------saving file--------------")
