@@ -11,6 +11,8 @@ from __builtin__ import str
 import sys
 import os
 import logging
+import MySQLdb
+import sys
 
 
 class TencentSpider(scrapy.Spider):
@@ -34,8 +36,8 @@ class TencentSpider(scrapy.Spider):
 	startCrawl = datetime.datetime.now()
 	logging.info("~~~~~~~~~~~~~~~~~~startCrawl at : "+str(startCrawl))
 # 	print ("~~~~~~~~~~~~~~~~~~startCrawl at : "+str(startCrawl))
-	
-
+	db = MySQLdb.connect("localhost","root","feixun*123","voice_news" )
+	cursor = db.cursor()
 	def generateSubPath(self):
 		currentTime = datetime.datetime.now()
 		year = str(currentTime.year)
@@ -93,13 +95,16 @@ class TencentSpider(scrapy.Spider):
 				print("--------------cul--------------"+url)
 				yield scrapy.Request(url,self.parseType,dont_filter=True)
 			
+			
+			
 			#===================================================================
 			# if(url.find('http://ent.qq.com/')>=0 and len(url)==18):
-			# 	logging.info("--------------finance--------------"+url)
-			# 	print("--------------finance--------------"+url)
+			# 	logging.info("--------------ent--------------"+url)
+			# 	print("--------------ent--------------"+url)
 			# 	yield scrapy.Request(url,self.parseType,dont_filter=True)	
 			#===================================================================
 				
+			
 				
 	# parse kinds of type of news
 	def parseType(self,response):
@@ -219,6 +224,29 @@ class TencentSpider(scrapy.Spider):
 		 file.write("\""+"title"+"\""+":"+"\""+newsTitle+"\""+'\n') 
 		 file.write("\""+"content"+"\""+":"+"\""+newsContent+"\""+'\n') 
  		 file.close()
+ 		 
+ 		 crawlTime = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
+#  		 newsTime = 
+ 		 # 插入数据库
+#===============================================================================
+#  		 import sys
+# r 		eload(sys)
+# s		ys.setdefaultencoding('utf8')
+#===============================================================================
+		 reload(sys)
+		 sys.setdefaultencoding('utf8')
+# 		 newsTitle="abc"
+ 		 sql = "insert into news_info_tbl(rawPath,deployTime,crawlTime,url,title,type) values ('%s','%s','%s','%s','%s','%s')"  % \
+ 		 (abs_file_path,str(newsTime),crawlTime,newsUrl,newsTitle,newsType)
+ 		 
+ 		 try:	
+ 		 	logging.info("--------------insert start--------------")
+ 		 	self.cursor.execute(sql)
+ 		 	self.db.commit()
+ 		 except:
+ 		 	self.db.rollback()
+#  		 db.close()
+		 logging.info("--------------insert finished--------------")
 		
 	endCrawl = datetime.datetime.now()
 	logging.info("~~~~~~~~~~~~~~~~~~endCrawl at : "+str(endCrawl))
