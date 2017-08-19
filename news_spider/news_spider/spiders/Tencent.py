@@ -29,14 +29,21 @@ class TencentSpider(scrapy.Spider):
 	month = ['08']
 	
 	fileName = ''
+	
+	#文件的存放目录
 	path_prefix = '../../../testdata/data/'
+	#数据库中rawPath的部分
+	raw_path = '\\testdata\\data\\'
+	
+	cur_dir = os.getcwd()
+	project_dir = os.path.abspath(os.path.dirname(cur_dir)+os.path.sep+".")
+	folder_path = project_dir+raw_path
 	
 	logging.basicConfig(filename='example.log',level=logging.INFO)
 	
 	startCrawl = datetime.datetime.now()
 	logging.info("~~~~~~~~~~~~~~~~~~startCrawl at : "+str(startCrawl))
-# 	print ("~~~~~~~~~~~~~~~~~~startCrawl at : "+str(startCrawl))
-	db = MySQLdb.connect("localhost","root","feixun*123","voice_news" )
+	db = MySQLdb.connect("localhost","root","feixun*123","voice_news",charset="utf8" )
 	cursor = db.cursor()
 	def generateSubPath(self):
 		currentTime = datetime.datetime.now()
@@ -66,6 +73,7 @@ class TencentSpider(scrapy.Spider):
 	def parseList(self,response):
 		logging.info("--------------parsing list--------------")
 		urls = response.xpath("//a/@href").extract()
+		urls = set(urls)
 # 		temp="20170806" #will be used at middle night
 		temp = self.generateSubPath()
 		print("===================================")
@@ -109,11 +117,10 @@ class TencentSpider(scrapy.Spider):
 	# parse kinds of type of news
 	def parseType(self,response):
 		logging.info("--------------parsing type--------------")
-# 		print("--------------parsing type--------------")
 		startparseOneSetNews = datetime.datetime.now()
 		logging.info("@@@@@@@@@@@@@@@@@@@startparseOneSetNews at : "+str(startparseOneSetNews))
-# 		print ("@@@@@@@@@@@@@@@@@@@startparseOneSetNews at : "+str(startparseOneSetNews))
 		urls = response.xpath("//a/@href").extract()
+		urls = set(urls)
 		temp = self.generateSubPath()
 
 		#=======================================================================
@@ -125,25 +132,19 @@ class TencentSpider(scrapy.Spider):
 				url = url 
 				if 'http' in url and temp in url:
 					logging.info("--------------with http url--------------"+url)
-# 					print("--------------with http url--------------"+url)
 					yield scrapy.Request(url,self.parseNews,dont_filter=True)
 				elif temp in url:
 					url = response.url+url
 					logging.info("--------------with temp url--------------"+url)
-# 					print("--------------with temp url--------------"+url)
 					yield scrapy.Request(url,self.parseNews,dont_filter=True)
 		endparseOneSetNews = datetime.datetime.now()
 		logging.info("@@@@@@@@@@@@@@@@@@@endparseOneSetNews at : "+str(endparseOneSetNews))
-# 		print ("@@@@@@@@@@@@@@@@@@@endparseOneSetNews at : "+str(endparseOneSetNews))
 		logging.info("@@@@@@@@@@@@@@@@@@@one set news cost time : "+str((endparseOneSetNews-startparseOneSetNews).seconds))
-# 		print ("@@@@@@@@@@@@@@@@@@@one set news cost time : "+str((endparseOneSetNews-startparseOneSetNews).seconds))
 			
 	def parseNews(self,response):
 		logging.info("--------------parsing news--------------")
-# 		print("--------------parsing news--------------")
 		startparseSingleNews = datetime.datetime.now()
 		logging.info("$$$$$$$$$$$$$$$$$$$$startparseSingleNews at : "+str(startparseSingleNews))
-# 		print ("$$$$$$$$$$$$$$$$$$$$startparseSingleNews at : "+str(startparseSingleNews))
 		data = response.xpath("//div[@id='Cnt-Main-Article-QQ']")
 		item = NewsSpiderItem()
 		timee = data.xpath("//span[@class='article-time']/text()").extract()
@@ -152,7 +153,6 @@ class TencentSpider(scrapy.Spider):
 		cc=''
 		if len(content)>0:
 			self.fileName = response.url[-10:-4]+".txt" 
-# 			scriptCnt = response.xpath("//script[1]/text()").extract()
 			scripts = response.xpath("//script/text()").extract()
 			url = response.url
 			title = response.xpath("//title/text()").extract()
@@ -165,22 +165,12 @@ class TencentSpider(scrapy.Spider):
 				if(scriptCnt.find('pubtime')>0):
 					time = self.getTimeStr(scriptCnt)
 					logging.info("--------------time--------------"+time)
-# 					print("--------------time--------------"+time)
 					break
-# 				time = self.getTimeStr(scriptCnt)
-				#===============================================================
-				# if(scriptCnt.find('pubtime') >= 0):
-				# 	break
-				#===============================================================
-# 			time = self.getTimeStr(scriptCnt[0])
 			logging.info("--------------questions urls--------------"+response.url)
-# 			print("--------------questions urls--------------"+response.url)
 			title = u''.join(title[0]).encode('utf-8')
 			logging.info("--------------questions title--------------"+title)
-# 			print("--------------questions title--------------"+title)
 			content = u''.join(content).encode('utf-8')
 			logging.info("--------------content title--------------"+content)
-# 			print("--------------content title--------------"+content)
 			if(len(content) > 0):
 				if(url.find("sports.qq.com") >= 0):
 					self.save("tencent/sports/", url, time, title, content)
@@ -209,13 +199,15 @@ class TencentSpider(scrapy.Spider):
 		endparseSingleNews = datetime.datetime.now()
 		logging.info("$$$$$$$$$$$$$$$$$$$$ endparseSingleNews at : "+str(endparseSingleNews))
 		logging.info("$$$$$$$$$$$$$$$$$$$$ single news cost time : "+str(endparseSingleNews-startparseSingleNews))
-# 		print ("$$$$$$$$$$$$$$$$$$$$ endparseSingleNews at : "+str(endparseSingleNews))
-# 		print ("$$$$$$$$$$$$$$$$$$$$ single news cost time : "+str(endparseSingleNews-startparseSingleNews))
 				 
 	def save(self,newsType,newsUrl,newsTime,newsTitle,newsContent):
+		
 		 logging.info("--------------saving file--------------")
 		 current_dir = os.path.dirname(__file__)
 		 rel_path = self.path_prefix+newsType+self.fileName
+		 temp1 = newsType.replace('/','\\')
+		 temp2 = self.folder_path+temp1+self.fileName
+		 file_path = temp2.replace('\\','\\\\')
 		 abs_file_path = os.path.join(current_dir, rel_path)
 		 logging.info("--------------******************abs_file_path--------------"+abs_file_path)
 		 file = open(abs_file_path,"w") 
@@ -226,19 +218,13 @@ class TencentSpider(scrapy.Spider):
  		 file.close()
  		 
  		 crawlTime = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
-#  		 newsTime = 
  		 # 插入数据库
-#===============================================================================
-#  		 import sys
-# r 		eload(sys)
-# s		ys.setdefaultencoding('utf8')
-#===============================================================================
 		 reload(sys)
 		 sys.setdefaultencoding('utf8')
-# 		 newsTitle="abc"
  		 sql = "insert into news_info_tbl(rawPath,deployTime,crawlTime,url,title,type) values ('%s','%s','%s','%s','%s','%s')"  % \
- 		 (abs_file_path,str(newsTime),crawlTime,newsUrl,newsTitle,newsType)
+ 		 (file_path ,str(newsTime),crawlTime,newsUrl,newsTitle,newsType)
  		 
+ 		 logging.info("--------------file path--------------"+file_path)
  		 try:	
  		 	logging.info("--------------insert start--------------")
  		 	self.cursor.execute(sql)
@@ -247,6 +233,12 @@ class TencentSpider(scrapy.Spider):
  		 	self.db.rollback()
 #  		 db.close()
 		 logging.info("--------------insert finished--------------")
+		 
+		 logging.info("----------cur_dir-----------"+self.cur_dir)
+		 logging.info("----------project_dir-----------"+self.project_dir)
+		 logging.info("----------folder_path-----------"+self.folder_path)
+		 
+		 
 		
 	endCrawl = datetime.datetime.now()
 	logging.info("~~~~~~~~~~~~~~~~~~endCrawl at : "+str(endCrawl))
