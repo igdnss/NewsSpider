@@ -30,10 +30,10 @@ CREATE TABLE `news_info_tbl` (
   `url` varchar(200) DEFAULT NULL COMMENT '新闻页的远程地址',
   `title` varchar(100) DEFAULT NULL COMMENT '新闻标题',
   `isIdle` tinyint(4) DEFAULT NULL COMMENT '废弃标记',
-  `state` int(11) DEFAULT NULL COMMENT '新闻在系统中的状态（1：preprocessed，2: extracted，3: integered，4: deployed）',
+  `state` int(11) DEFAULT '1' COMMENT '新闻在系统中的状态（1：preprocessed，2: extracted，3: integered，4: deployed）',
   `type` varchar(50) DEFAULT NULL COMMENT '新闻类型',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=199 DEFAULT CHARSET=utf8;
 
 /*Data for the table `news_info_tbl` */
 
